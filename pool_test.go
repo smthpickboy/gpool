@@ -19,16 +19,11 @@ import (
 // global pool for testing long running pool
 var limitedGpool Pool
 
-var unlimitedGpool Pool
-
 func TestMain(m *testing.M) {
 
 	// setup
 	limitedGpool = NewLimited(4)
 	defer limitedGpool.Close()
-
-	unlimitedGpool = New()
-	defer unlimitedGpool.Close()
 
 	os.Exit(m.Run())
 
