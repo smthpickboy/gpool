@@ -7,8 +7,7 @@ import (
 	"context"
 	"fmt"
 	"sync/atomic"
-
-	. "gopkg.in/go-playground/assert.v1"
+	"github.com/stretchr/testify/require"
 )
 
 // NOTES:
@@ -51,13 +50,13 @@ func TestPool(t *testing.T) {
 	for i, wu := range res {
 		fmt.Println(i)
 		v, e := wu()
-		Equal(t, e, nil)
-		Equal(t, v, nil)
+		require.Equal(t, e, nil)
+		require.Equal(t, v, nil)
 		count++
 	}
 
-	Equal(t, count, 4)
-	Equal(t, reportCount, int64(4))
+	require.Equal(t, count, 4)
+	require.Equal(t, reportCount, int64(4))
 
 	pool.Close() // testing no error occurs as Close will be called twice once defer pool.Close() fires
 }
