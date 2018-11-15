@@ -45,7 +45,7 @@ func (p *limitedPool) initialize() {
 }
 
 // passing work and cancel channels to newWorker() to avoid any potential race condition
-// betweeen p.work read & write
+// between p.work read & write
 func (p *limitedPool) newWorker() {
 	go func(p *limitedPool) {
 		for {
@@ -109,7 +109,6 @@ func (p *limitedPool) Reset() {
 }
 
 func (p *limitedPool) closeWithError(err error) {
-
 	p.m.Lock()
 
 	if !p.closed {
@@ -119,7 +118,7 @@ func (p *limitedPool) closeWithError(err error) {
 	}
 
 	for wu := range p.work {
-		wu.report(nil, ErrPoolClosed)
+		wu.report(nil, err)
 	}
 
 	p.m.Unlock()
