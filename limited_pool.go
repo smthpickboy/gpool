@@ -9,16 +9,15 @@ var _ Pool = new(limitedPool)
 
 // limitedPool contains all information for a limited pool instance.
 type limitedPool struct {
-	workers uint
-	work    chan *workUnit
-	cancel  chan struct{}
-	closed  bool
-	m       sync.RWMutex
+	workers   uint
+	workUnits chan *workUnit
+	cancel    chan struct{}
+	closed    bool
+	m         sync.RWMutex
 }
 
 // NewLimited returns a new limited pool instance
 func NewLimited(workers uint) Pool {
-
 	if workers == 0 {
 		panic("invalid workers '0'")
 	}
@@ -34,7 +33,7 @@ func NewLimited(workers uint) Pool {
 
 func (p *limitedPool) initialize() {
 
-	p.work = make(chan *workUnit, p.workers*2)
+	p.workUnits = make(chan *workUnit, p.workers*2)
 	p.cancel = make(chan struct{})
 	p.closed = false
 
@@ -50,7 +49,7 @@ func (p *limitedPool) newWorker() {
 	go func(p *limitedPool) {
 		for {
 			select {
-			case wu := <-p.work:
+			case wu := <-p.workUnits:
 				// in case work and cancel are closed at the same time
 				if wu == nil {
 					continue
@@ -68,7 +67,8 @@ func (p *limitedPool) newWorker() {
 	}(p)
 }
 
-// Queue queues the work to be run, and starts processing immediately
+// Queue queues the work to be run, and starts processing immediately.
+// Blocks until work is added to work queue in the pool, or context canceled.
 func (p *limitedPool) Queue(ctx context.Context, work WorkFunc, report ReportFunc) WaitFunc {
 	w := &workUnit{
 		done:   make(chan struct{}),
@@ -83,7 +83,7 @@ func (p *limitedPool) Queue(ctx context.Context, work WorkFunc, report ReportFun
 		report(nil, ErrPoolClosed)
 	} else {
 		select {
-		case p.work <- w:
+		case p.workUnits <- w:
 		case <-ctx.Done():
 			w.e = ctx.Err()
 		}
@@ -114,10 +114,10 @@ func (p *limitedPool) closeWithError(err error) {
 	if !p.closed {
 		p.closed = true
 		close(p.cancel)
-		close(p.work)
+		close(p.workUnits)
 	}
 
-	for wu := range p.work {
+	for wu := range p.workUnits {
 		wu.report(nil, err)
 	}
 

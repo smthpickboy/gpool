@@ -23,7 +23,12 @@ type workUnit struct {
 }
 
 // Wait blocks until WorkUnit has been processed or cancelled
-func (wu *workUnit) Wait() (interface{}, error) {
-	<-wu.done
+func (w *workUnit) Wait() (interface{}, error) {
+	select {
+	case <-w.done:
+	case <-w.ctx.Done():
+		w.e = w.ctx.Err()
+		return nil, w.e
+	}
 	return nil, nil
 }

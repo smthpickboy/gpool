@@ -4,7 +4,6 @@ import "context"
 
 // Pool contains all information for a pool instance.
 type Pool interface {
-
 	// Queue queues the work to be run, and starts processing immediately
 	Queue(ctx context.Context, work WorkFunc, report ReportFunc) WaitFunc
 
